@@ -1,5 +1,7 @@
-from json import JSONDecodeError
-from httpx import AsyncClient, AsyncHTTPTransport, RequestError, Timeout
+from json import dumps, loads, JSONDecodeError
+from httpx import AsyncClient, RequestError
+from httpx import AsyncHTTPTransport
+from functools import wraps
 
 from .exception import (
     MYJDApiException,
@@ -710,6 +712,15 @@ class Jddevice:
         return response["data"]
 
 
+class clientSession(AsyncClient):
+
+    @wraps(AsyncClient.request)
+    async def request(self, method: str, url: str, **kwargs):
+        kwargs.setdefault("timeout", 3)
+        kwargs.setdefault("follow_redirects", True)
+        return await super().request(method, url, **kwargs)
+
+
 class MyJdApi:
 
     def __init__(self):
@@ -723,14 +734,9 @@ class MyJdApi:
 
         transport = AsyncHTTPTransport(retries=10, verify=False)
 
-        self._http_session = AsyncClient(
-            base_url=self.__api_url,
-            transport=transport,
-            headers={"Content-Type": "application/json; charset=utf-8"},
-            timeout=Timeout(connect=60, read=60, write=60, pool=None),
-            follow_redirects=True,
-            verify=False,
-        )
+        self._http_session = clientSession(transport=transport)
+
+        self._http_session.verify = False
 
         return self._http_session
 
@@ -741,41 +747,49 @@ class MyJdApi:
 
     async def request_api(self, path, params=None):
         session = self._session()
+
+        # Prepare params_request based on the input params
         params_request = params if params is not None else []
+
+        # Construct the request payload
         params_request = {
             "params": params_request,
         }
+        data = dumps(params_request)
+        # Removing quotes around null elements.
+        data = data.replace('"null"', "null")
+        data = data.replace("'null'", "null")
+        request_url = self.__api_url + path
         try:
-            res = await session.post(
-                path,
-                json=params_request,
+            res = await session.request(
+                "POST",
+                request_url,
+                headers={"Content-Type": "application/json; charset=utf-8"},
+                content=data,
             )
+            response = res.text
         except RequestError:
             return None
-        try:
-            response = res.json()
-        except JSONDecodeError as exc:
-            raise MYJDDecodeException(
-                "Failed to decode response: {}", response
-            ) from exc
         if res.status_code != 200:
+            try:
+                error_msg = loads(response)
+            except JSONDecodeError as exc:
+                raise MYJDDecodeException(
+                    "Failed to decode response: {}", response
+                ) from exc
             msg = (
                 "\n\tSOURCE: "
-                + response.get("src", "UNKNOWN_SOURCE")
+                + error_msg["src"]
                 + "\n\tTYPE: "
-                + response.get("type", "UNKNOWN_TYPE")
+                + error_msg["type"]
                 + "\n------\nREQUEST_URL: "
                 + self.__api_url
                 + path
             )
             msg += "\n"
-            if params_request is not None:
-                msg += "DATA:\n" + params_request
+            if data is not None:
+                msg += "DATA:\n" + data
             raise (
-                MYJDApiException.get_exception(
-                    response.get("src", "UNKNOWN_SOURCE"),
-                    response.get("type", "UNKNOWN_TYPE"),
-                    msg,
-                )
+                MYJDApiException.get_exception(error_msg["src"], error_msg["type"], msg)
             )
-        return response
+        return loads(response)

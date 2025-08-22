@@ -1,14 +1,19 @@
 from asyncio import sleep
-from pyrogram.errors import FloodWait, FloodPremiumWait
+from pyrogram.errors import FloodWait
 from re import match as re_match
 from time import time
 
-from ... import LOGGER, status_dict, task_dict_lock, intervals, DOWNLOAD_DIR
+from ... import LOGGER, status_dict, task_dict_lock, intervals
 from ...core.config_manager import Config
 from ...core.mltb_client import TgClient
 from ..ext_utils.bot_utils import SetInterval
 from ..ext_utils.exceptions import TgLinkException
 from ..ext_utils.status_utils import get_readable_message
+
+try:
+    from pyrogram.errors import FloodPremiumWait
+except ImportError:
+    FloodPremiumWait = FloodWait
 
 
 async def send_message(message, text, buttons=None, block=True):
@@ -173,11 +178,6 @@ async def get_tg_link_message(link):
             return (links, "user") if links else (user_message, "user")
     else:
         raise TgLinkException("Private: Please report!")
-
-
-async def temp_download(msg):
-    path = f"{DOWNLOAD_DIR}temp"
-    return await msg.download(file_name=f"{path}/")
 
 
 async def update_status_message(sid, force=False):

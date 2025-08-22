@@ -267,6 +267,8 @@ class RcloneList:
             "--config",
             self.config_path,
             f"{self.remote}{self.path}",
+            "-v",
+            "--log-systemd",
         ]
         if self.listener.is_cancelled:
             return

@@ -1,6 +1,6 @@
 from asyncio import Lock, sleep
 from time import time
-from pyrogram.errors import FloodWait, FloodPremiumWait
+from pyrogram.errors import FloodWait
 
 from .... import (
     LOGGER,
@@ -16,6 +16,10 @@ from ...telegram_helper.message_utils import send_status_message
 global_lock = Lock()
 GLOBAL_GID = set()
 
+try:
+    from pyrogram.errors import FloodPremiumWait
+except ImportError:
+    FloodPremiumWait = FloodWait
 
 class TelegramDownloadHelper:
     def __init__(self, listener):
@@ -64,10 +68,10 @@ class TelegramDownloadHelper:
         await self._listener.on_download_error(error)
 
     async def _on_download_complete(self):
-        async with global_lock:
-            if self._id in GLOBAL_GID:
-                GLOBAL_GID.remove(self._id)
         await self._listener.on_download_complete()
+        async with global_lock:
+            GLOBAL_GID.remove(self._id)
+        return
 
     async def _download(self, message, path):
         try:
@@ -89,6 +93,7 @@ class TelegramDownloadHelper:
             await self._on_download_complete()
         elif not self._listener.is_cancelled:
             await self._on_download_error("Internal error occurred")
+        return
 
     async def add_download(self, message, path, session):
         self.session = session

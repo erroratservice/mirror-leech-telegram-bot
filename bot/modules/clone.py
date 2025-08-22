@@ -191,6 +191,8 @@ class Clone(TaskListener):
                     "--config",
                     config_path,
                     f"{remote}:{src_path}",
+                    "-v",
+                    "--log-systemd",
                 ]
                 res = await cmd_exec(cmd)
                 if res[2] != 0:
@@ -244,6 +246,8 @@ class Clone(TaskListener):
                 "--config",
                 config_path,
                 destination,
+                "-v",
+                "--log-systemd",
             ]
             cmd2 = [
                 "rclone",
@@ -254,6 +258,8 @@ class Clone(TaskListener):
                 "--config",
                 config_path,
                 destination,
+                "-v",
+                "--log-systemd",
             ]
             cmd3 = [
                 "rclone",
@@ -263,6 +269,8 @@ class Clone(TaskListener):
                 "--config",
                 config_path,
                 destination,
+                "-v",
+                "--log-systemd",
             ]
             res1, res2, res3 = await gather(
                 cmd_exec(cmd1),

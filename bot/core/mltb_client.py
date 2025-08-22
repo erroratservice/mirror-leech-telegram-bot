@@ -1,9 +1,11 @@
-from pyrogram import Client, enums
+from pyrogram import Client, enums, utils as pyroutils
 from asyncio import Lock
 
 from .. import LOGGER
 from .config_manager import Config
 
+pyroutils.MIN_CHAT_ID = -999999999999
+pyroutils.MIN_CHANNEL_ID = -100999999999999
 
 class TgClient:
     _lock = Lock()
@@ -26,7 +28,6 @@ class TgClient:
             bot_token=Config.BOT_TOKEN,
             workdir="/usr/src/app",
             parse_mode=enums.ParseMode.HTML,
-            max_concurrent_transmissions=10,
         )
         await cls.bot.start()
         cls.NAME = cls.bot.me.username
@@ -44,7 +45,6 @@ class TgClient:
                     session_string=Config.USER_SESSION_STRING,
                     parse_mode=enums.ParseMode.HTML,
                     sleep_threshold=60,
-                    max_concurrent_transmissions=10,
                 )
                 await cls.user.start()
                 cls.IS_PREMIUM_USER = cls.user.me.is_premium

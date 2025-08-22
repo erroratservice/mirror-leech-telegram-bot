@@ -1,3 +1,4 @@
+from os import environ
 from aiofiles.os import path as aiopath, remove, makedirs
 from aiofiles import open as aiopen
 from aioshutil import rmtree
@@ -221,7 +222,7 @@ async def update_variables():
                 drives_ids.append(temp[1])
                 drives_names.append(temp[0].replace("_", " "))
                 if len(temp) > 2:
-                    index_urls.append(temp[2].strip("/"))
+                    index_urls.append(temp[2])
                 else:
                     index_urls.append("")
 
@@ -237,10 +238,10 @@ async def load_configurations():
             "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria-nox-nzb.sh && ./aria-nox-nzb.sh"
         )
     ).wait()
-
+    PORT = environ.get("PORT", 80) or environ.get("BASE_URL_PORT", 80)
     if Config.BASE_URL:
         await create_subprocess_shell(
-            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{Config.BASE_URL_PORT}"
+            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{PORT}"
         )
 
     if await aiopath.exists("cfg.zip"):

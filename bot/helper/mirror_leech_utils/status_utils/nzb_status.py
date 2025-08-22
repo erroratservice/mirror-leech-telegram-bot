@@ -24,7 +24,7 @@ async def get_download(nzo_id, old_info=None):
                 if slot["status"] == "Verifying":
                     percentage = slot["action_line"].split("Verifying: ")[-1].split("/")
                     percentage = round(
-                        (int(float(percentage[0])) / int(float(percentage[1]))) * 100, 2
+                        (int(percentage[0]) / int(percentage[1])) * 100, 2
                     )
                     old_info["percentage"] = percentage
                 elif slot["status"] == "Repairing":
@@ -34,15 +34,10 @@ async def get_download(nzo_id, old_info=None):
                     old_info["percentage"] = percentage
                     old_info["timeleft"] = eta
                 elif slot["status"] == "Extracting":
-                    if "Unpacking" in slot["action_line"]:
-                        action = slot["action_line"].split("Unpacking: ")[-1].split()
-                    else:
-                        action = (
-                            slot["action_line"].split("Direct Unpack: ")[-1].split()
-                        )
+                    action = slot["action_line"].split("Unpacking: ")[-1].split()
                     percentage = action[0].split("/")
                     percentage = round(
-                        (int(float(percentage[0])) / int(float(percentage[1]))) * 100, 2
+                        (int(percentage[0]) / int(percentage[1])) * 100, 2
                     )
                     eta = action[2]
                     old_info["percentage"] = percentage
@@ -75,10 +70,8 @@ class SabnzbdStatus:
         return get_readable_file_size(self.processed_raw())
 
     def speed_raw(self):
-        if self._info["mb"] == self._info["mbleft"]:
-            return 0
         try:
-            return int(float(self._info["mbleft"]) * 1048576) / self.eta_raw()
+            return int(float(self._info["mb"]) * 1048576) / self.eta_raw()
         except:
             return 0
 
@@ -99,8 +92,6 @@ class SabnzbdStatus:
 
     async def status(self):
         await self.update()
-        if self._info["mb"] == self._info["mbleft"]:
-            return MirrorStatus.STATUS_QUEUEDL
         state = self._info["status"]
         if state == "Paused" and self.queued:
             return MirrorStatus.STATUS_QUEUEDL

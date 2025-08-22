@@ -58,9 +58,6 @@ USENET_SERVERS = [
         "priority": 0,
     }
 ]
-# Nzb search
-HYDRA_IP = ""
-HYDRA_API_KEY = ""
 # Update
 UPSTREAM_REPO = ""
 UPSTREAM_BRANCH = "master"
