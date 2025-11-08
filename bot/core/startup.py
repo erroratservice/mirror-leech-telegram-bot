@@ -237,10 +237,10 @@ async def load_configurations():
             "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria-nox-nzb.sh && ./aria-nox-nzb.sh"
         )
     ).wait()
-
+    PORT = environ.get("PORT", 80) or environ.get("BASE_URL_PORT", 80)
     if Config.BASE_URL:
         await create_subprocess_shell(
-            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{Config.BASE_URL_PORT}"
+            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{PORT}"
         )
 
     if await aiopath.exists("cfg.zip"):
